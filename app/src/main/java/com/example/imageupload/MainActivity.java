@@ -3,8 +3,11 @@ package com.example.imageupload;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -25,6 +28,8 @@ import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -86,19 +91,63 @@ public class MainActivity extends AppCompatActivity {
         imageedit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                /*
                 Intent intent = new Intent(Intent.ACTION_PICK);
                 intent.setType("image/*");
                 galaryLauncher.launch(intent);
+
+                 */
+
+
+                if (ChackcameraPermission()){
+                        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        Cameralauncher.launch(intent);
+                }
             }
         });
 
     }
 
+    //===========================CameraPermission====================================
+
+    private boolean ChackcameraPermission(){
+        boolean haspermission = false;
+
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA)== PackageManager.PERMISSION_GRANTED){
+            haspermission = true;
+        }else {
+            haspermission = false;
+            ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.CAMERA},105);
+        }
+
+        return haspermission;
+
+    }
+
+    //=======================CameraLanucher==========================================
+    ActivityResultLauncher<Intent> Cameralauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode()==Activity.RESULT_OK){
+                        tvdisplay.setText("Image Capture");
+                        Intent intent = result.getData();
+                        Bundle bundle = intent.getExtras();
+                        Bitmap bitmap = (Bitmap) bundle.get("data");
+                        imageview.setImageBitmap(bitmap);
+                    }else {
+                        tvdisplay.setText("Image not Capture");
+                    }
+
+                }
+            });
+
+    //======================gallery launcher======================================
     ActivityResultLauncher<Intent> galaryLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
-                    if (result.getResultCode() == RESULT_OK){
+                    if (result.getResultCode() == Activity.RESULT_OK){
                         tvdisplay.setText("Image selected");
                         Intent intent = result.getData();
                         Uri uri = intent.getData();
@@ -119,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-
+//=====================Stringrequest==================================================
     private void stringrequest(String image64){
         progressbar.setVisibility(VISIBLE);
         String url = "https://mafiul.shop/file.php";
