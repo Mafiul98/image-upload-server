@@ -41,6 +41,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.github.dhaval2404.imagepicker.ImagePicker;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -48,6 +49,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -91,22 +95,40 @@ public class MainActivity extends AppCompatActivity {
         imageedit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*
-                Intent intent = new Intent(Intent.ACTION_PICK);
-                intent.setType("image/*");
-                galaryLauncher.launch(intent);
 
-                 */
-
-
-                if (ChackcameraPermission()){
-                        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                        Cameralauncher.launch(intent);
-                }
+                ImagePicker.with(MainActivity.this)
+                        .maxResultSize(1000,1000)
+                        .compress(1024)
+                        .createIntent(new Function1<Intent, Unit>() {
+                            @Override
+                            public Unit invoke(Intent intent) {
+                                imagePickerlauncher.launch(intent);
+                                return null;
+                            }
+                        });
             }
         });
 
     }
+
+    //=========================Image picker Launcher===============================
+    ActivityResultLauncher<Intent> imagePickerlauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode()==Activity.RESULT_OK){
+                        Intent intent = result.getData();
+                        Uri uri = intent.getData();
+                        try {
+                            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),uri);
+                            imageview.setImageBitmap(bitmap);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                }
+            });
 
     //===========================CameraPermission====================================
 
